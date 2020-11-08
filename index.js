@@ -54,4 +54,26 @@ const getSpecies = async () => {
         console.log(err)
     }
 }
-getSpecies()
+// getSpecies()
+
+// Exercice 3
+// Créez une fonction qui retourne la somme des tailles de tous les humains
+const getTotalHeight = async () => {
+    try {
+        const humans = []
+        const humanPeople = await axios.get('http://swapi.dev/api/species/1')
+        // console.log(humanPeople.data.p);
+        for (let i = 0; i < humanPeople.data.people.length; i++) {
+            humans.push(axios.get(humanPeople.data.people[i]))
+        }
+
+        axios.all(humans)
+        .then((res) => {
+            const totalHeight = res.reduce((accumulator, currentValue) => parseInt(accumulator) + parseInt(currentValue.data.height), 0)
+            console.log(totalHeight);
+        })
+    } catch (err) {
+        console.log(err)
+    }
+}
+getTotalHeight()
