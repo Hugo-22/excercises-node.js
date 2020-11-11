@@ -1,30 +1,21 @@
 const axios = require('axios').default
+const Human = require('./Human')
 
 // Exercice 1
 // Créez une fonction qui appelle l'API de SWAPI et qui retourne Yoda
 const getYoda = async () => {
     try {
-        let page = 1
-        let lastPage = false
-
-        while (!lastPage) {
-            let res = await axios.get('http://swapi.dev/api/people/', {
-                params: {
-                    page
-                }
-            })
-            for (const props in res.data.results) {
-                if (res.data.results[props].name === 'Yoda') {
-                    console.log(res.data.results[props])
-                    return;
-                }
+        const res = await axios.get('http://swapi.dev/api/people/', {
+            params: {
+                search: 'yoda'
             }
-            res.data.next ? page++ : lastPage = true
+        })
+        console.log(res.data.results);
     }
-    } catch (err) {
+    catch (err) {
         console.log(err)
     }
-} 
+}
 // getYoda()
 
 // Exercice 2
@@ -62,18 +53,65 @@ const getTotalHeight = async () => {
     try {
         const humans = []
         const humanPeople = await axios.get('http://swapi.dev/api/species/1')
-        // console.log(humanPeople.data.p);
+
         for (let i = 0; i < humanPeople.data.people.length; i++) {
-            humans.push(axios.get(humanPeople.data.people[i]))
+            const result = await axios.get(humanPeople.data.people[i])
+            humans.push(result.data.height)
         }
 
-        axios.all(humans)
-        .then((res) => {
-            const totalHeight = res.reduce((accumulator, currentValue) => parseInt(accumulator) + parseInt(currentValue.data.height), 0)
-            console.log(totalHeight);
-        })
+        const totalHeight = humans.reduce((accumulator, currentValue) => parseInt(accumulator) + parseInt(currentValue), 0)
+        console.log(totalHeight)
     } catch (err) {
         console.log(err)
     }
 }
-getTotalHeight()
+// getTotalHeight()
+
+// Exercice 4
+// Créez une fonction qui retourne un tableau de tous les humains,
+// contenant le nom, la taille, le poids, le nom des films
+// dans lesquels ils sont apparus et le nom de leur planète d'origine
+const getHumans = async () => {
+    const humans = []
+    try {
+        const humansList = await axios.get('http://swapi.dev/api/species/1')
+        
+        for (let i = 0; i < humansList.data.people.length; i++) {
+            
+            const infos = await axios.get(humansList.data.people[i])
+            const planet = await getHomeworld(infos.data.homeworld)
+            const filmsTitle = await getFilms(infos.data.films)
+
+            humans.push(new Human(infos.data.name, infos.data.height, infos.data.mass, planet.data.name, filmsTitle))
+        }
+    } catch (err) {
+        console.log(err)
+    }
+    console.log(humans);
+}
+// getHumans()
+
+
+// Récupère le nom d'une planète
+const getHomeworld = async (planetUrl) => {
+    try {
+        const nameHomeworld = await axios.get(planetUrl)
+        return nameHomeworld
+    } catch (err) {
+        console.log(err)
+    }
+}
+
+// Récupère le titre d'un (ou plusieurs) films
+const getFilms = async (arrFilmsUrl) => {
+    const filmsTitle = []
+    try {
+        for (const url of arrFilmsUrl) {
+            let filmsInfos = await axios.get(url)
+            filmsTitle.push(filmsInfos.data.title)
+        }
+    } catch (err) {
+        console.log(err)
+    }
+    return filmsTitle;
+}
